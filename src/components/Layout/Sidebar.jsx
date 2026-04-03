@@ -1,6 +1,7 @@
 import { useApp } from '../../context/AppContext'
 import ThemeToggle from '../common/ThemeToggle'
 import RoleSelector from '../common/RoleSelector'
+import toast, { Toaster } from 'react-hot-toast';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -8,6 +9,7 @@ import {
   Shield,
   Diamond,
   X,
+  LogOut,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -24,7 +26,12 @@ export default function Sidebar({ isOpen, onClose }) {
     setActiveTab(id)
     if (onClose) onClose()
   }
-
+const handleLogout = (e)=>{
+  e.preventDefault();
+  // console.log("login pressed")
+  toast.success('Logout Successful', { className:'border border' ,position: 'top-center' })
+   
+}
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
       {/* Logo */}
@@ -75,6 +82,11 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="sidebar-secure-badge">
           <Shield size={13} color="var(--accent)" />
           <span>Secured & encrypted</span>
+        </div>
+        <div className="sidebar-secure-badge "onClick={handleLogout}>
+          <LogOut  size={13} color="var(--accent)" />
+          <span>logout</span>
+          <Toaster />
         </div>
       </div>
     </aside>

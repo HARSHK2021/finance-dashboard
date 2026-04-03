@@ -14,8 +14,8 @@ const ROLE_COLORS = {
 }
 
 const ROLE_LABELS = {
-  admin: '👑 Admin',
-  viewer: '👁 Viewer',
+  admin: ' Admin',
+  viewer: 'Viewer',
 }
 
 export default function Header({ onMenuClick }) {

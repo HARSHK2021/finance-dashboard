@@ -2,7 +2,7 @@ import { useApp } from '../../context/AppContext'
 import { Crown, Eye } from 'lucide-react'
 
 const ROLES = [
-  { id: 'admin', label: 'Admin', desc: 'Full access — add, edit & delete' },
+  { id: 'admin', label: 'Admin', desc: 'Full access' },
   { id: 'viewer', label: 'Viewer', desc: 'Read-only access' },
 ]
 
