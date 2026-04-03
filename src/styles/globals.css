@@ -1172,10 +1172,8 @@ body {
 }
 
 /* ===== THEME TOGGLE ===== */
+/* ===== THEME TOGGLE — sliding pill ===== */
 .theme-toggle-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -1188,39 +1186,110 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-muted);
+  margin-bottom: 8px;
 }
 
-.theme-options { display: flex; gap: 4px; }
+.tt-wrap {
+  display: flex;
+  gap: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  position: relative;
+}
 
-.theme-btn {
+/* The animated sliding background */
+.tt-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 9px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hover);
+  transition:
+    left  0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.26s ease;
+  z-index: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+/* Each theme button */
+.tt-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  padding: 9px 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 9px 4px 8px;
+  border: none;
   background: transparent;
   cursor: pointer;
+  border-radius: 9px;
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+  transition: background var(--transition);
+}
+
+.tt-btn:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+/* Icon box inside each button */
+.tt-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
   transition: all var(--transition);
+  opacity: 0.55;
+}
+
+/* Active icon colours per theme */
+.tt-btn.light.active .tt-icon-wrap {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--amber);
+  opacity: 1;
+}
+
+.tt-btn.dim.active .tt-icon-wrap {
+  background: rgba(167, 139, 250, 0.13);
+  color: var(--purple);
+  opacity: 1;
+}
+
+.tt-btn.dark.active .tt-icon-wrap {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  opacity: 1;
+}
+
+.tt-btn:hover:not(.active) .tt-icon-wrap {
+  opacity: 0.85;
+}
+
+.tt-btn-label {
   font-size: 0.62rem;
   font-weight: 700;
-  color: var(--text-muted);
-  font-family: var(--font-body);
   letter-spacing: 0.03em;
+  color: var(--text-muted);
+  opacity: 0.6;
+  transition: all var(--transition);
+  line-height: 1;
 }
 
-.theme-btn:hover { background: var(--bg-hover); color: var(--text-secondary); border-color: var(--border-hover); }
-
-.theme-btn.active {
-  background: var(--accent-subtle);
-  border-color: var(--border-accent);
-  color: var(--accent);
-  box-shadow: var(--glow-accent);
+.tt-btn.active .tt-btn-label {
+  color: var(--text-primary);
+  opacity: 1;
 }
 
-/* ===== ROLE SELECTOR ===== */
+
+/* ===== ROLE SELECTOR — custom segmented toggle ===== */
 .role-selector-wrap {
   padding: 12px;
   background: var(--bg-elevated);
@@ -1237,37 +1306,150 @@ body {
   margin-bottom: 8px;
 }
 
-.role-select {
-  width: 100%;
-  padding: 9px 28px 9px 11px;
+/* Segmented control wrapper */
+.rs-wrap {
+  display: flex;
+  gap: 4px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 4px;
+  position: relative;
+}
+
+/* Animated sliding background */
+.rs-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 9px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hover);
+  transition:
+    left 0.24s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.24s ease;
+  z-index: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+/* Each role button */
+.rs-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
   cursor: pointer;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23536a82' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
+  transition: all var(--transition);
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+}
+
+.rs-option:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+/* Icon container */
+.rs-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
   transition: all var(--transition);
 }
 
-.role-select:focus { border-color: var(--border-accent); }
+/* Active states per role */
+.rs-option.admin.active .rs-icon-wrap {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--amber);
+  border-color: rgba(251, 191, 36, 0.35);
+}
 
-.role-badge {
+.rs-option.viewer.active .rs-icon-wrap {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.rs-opt-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: color var(--transition);
+  line-height: 1;
+}
+
+.rs-opt-desc {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.7;
+  transition: all var(--transition);
+  line-height: 1;
+}
+
+.rs-option.active .rs-opt-label {
+  color: var(--text-primary);
+}
+
+.rs-option.active .rs-opt-desc {
+  opacity: 1;
+  color: var(--text-secondary);
+}
+
+/* Status badge below the toggle */
+.rs-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 600;
-  margin-top: 7px;
-  padding: 4px 9px;
-  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.rs-badge--admin {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--amber);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.rs-badge--viewer {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+}
+
+.rs-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.rs-badge--admin .rs-badge-dot  { background: var(--amber); }
+.rs-badge--viewer .rs-badge-dot { background: var(--accent); }
+
+/* Responsive: stack nicely on very small screens */
+@media (max-width: 280px) {
+  .rs-opt-desc { display: none; }
+  .rs-option { padding: 8px 4px; }
 }
 
 /* ===== TOAST ===== */
@@ -1466,4 +1648,93 @@ body {
 
   .header-role-pill { display: none; }
   .header-date      { display: none; }
+}
+/* ===== LOGOUT BUTTON ===== */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(248, 113, 113, 0.18);
+  background: rgba(248, 113, 113, 0.06);
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+  font-family: var(--font-body);
+  text-decoration: none;
+}
+
+.logout-btn:hover {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.38);
+  transform: translateX(2px);
+}
+
+.logout-btn:active {
+  transform: scale(0.98);
+}
+
+.logout-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--expense);
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.logout-btn:hover .logout-icon-wrap {
+  background: rgba(248, 113, 113, 0.22);
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
+.logout-text-wrap {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.logout-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--expense);
+  line-height: 1.25;
+}
+
+.logout-sub {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--expense);
+  opacity: 0.6;
+  line-height: 1.25;
+  margin-top: 1px;
+}
+
+.logout-arrow {
+  color: var(--expense);
+  opacity: 0.4;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.logout-btn:hover .logout-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Light mode — slightly stronger red */
+[data-theme="light"] .logout-btn {
+  border-color: rgba(185, 28, 28, 0.2);
+  background: rgba(185, 28, 28, 0.05);
+}
+
+[data-theme="light"] .logout-btn:hover {
+  background: rgba(185, 28, 28, 0.1);
+  border-color: rgba(185, 28, 28, 0.32);
 }

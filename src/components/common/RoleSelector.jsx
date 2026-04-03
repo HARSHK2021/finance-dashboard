@@ -1,43 +1,72 @@
+import { useEffect, useRef } from 'react'
 import { useApp } from '../../context/AppContext'
 import { Crown, Eye } from 'lucide-react'
 
 const ROLES = [
-  { id: 'admin', label: 'Admin', desc: 'Full access' },
-  { id: 'viewer', label: 'Viewer', desc: 'Read-only access' },
+  {
+    id: 'admin',
+    label: 'Admin',
+    desc: 'Full access',
+    icon: Crown,
+  },
+  {
+    id: 'viewer',
+    label: 'Viewer',
+    desc: 'Read-only',
+    icon: Eye,
+  },
 ]
-
-const ROLE_ICONS = { admin: Crown, viewer: Eye }
-const ROLE_COLORS = {
-  admin: { bg: 'rgba(251,191,36,0.12)', color: 'var(--amber)', border: 'rgba(251,191,36,0.3)' },
-  viewer: { bg: 'var(--accent-subtle)', color: 'var(--accent)', border: 'var(--border-accent)' },
-}
 
 export default function RoleSelector() {
   const { state, setRole } = useApp()
   const { role } = state
-  const Icon = ROLE_ICONS[role] || Eye
-  const colors = ROLE_COLORS[role] || ROLE_COLORS.viewer
+  const sliderRef = useRef(null)
+  const wrapRef = useRef(null)
+
+  // Animate the sliding indicator
+  useEffect(() => {
+    const wrap = wrapRef.current
+    const slider = sliderRef.current
+    if (!wrap || !slider) return
+
+    const activeBtn = wrap.querySelector(`.rs-option.${role}`)
+    if (!activeBtn) return
+
+    const wrapRect = wrap.getBoundingClientRect()
+    const btnRect = activeBtn.getBoundingClientRect()
+    slider.style.left = `${btnRect.left - wrapRect.left}px`
+    slider.style.width = `${btnRect.width}px`
+  }, [role])
 
   return (
     <div className="role-selector-wrap">
       <div className="role-label">Switch Role</div>
-      <select
-        className="role-select"
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-        aria-label="Select role"
-      >
-        {ROLES.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.label} — {r.desc}
-          </option>
+
+      {/* Segmented toggle */}
+      <div className="rs-wrap" ref={wrapRef}>
+        {/* Sliding background pill */}
+        <div className="rs-slider" ref={sliderRef} />
+
+        {ROLES.map(({ id, label, desc, icon: Icon }) => (
+          <button
+            key={id}
+            className={`rs-option ${id} ${role === id ? 'active' : ''}`}
+            onClick={() => setRole(id)}
+            aria-pressed={role === id}
+            aria-label={`Switch to ${label} role`}
+          >
+            <div className="rs-icon-wrap">
+              <Icon size={14} />
+            </div>
+            <span className="rs-opt-label">{label}</span>
+            <span className="rs-opt-desc">{desc}</span>
+          </button>
         ))}
-      </select>
-      <div
-        className="role-badge"
-        style={{ background: colors.bg, color: colors.color, border: `1px solid ${colors.border}` }}
-      >
-        <Icon size={11} />
+      </div>
+
+      {/* Status badge */}
+      <div className={`rs-badge rs-badge--${role}`}>
+        <span className="rs-badge-dot" />
         {role === 'admin' ? 'Can edit all data' : 'View only — no edits'}
       </div>
     </div>
