@@ -2,6 +2,7 @@ import { useApp } from "../../context/AppContext";
 import ThemeToggle from "../common/ThemeToggle";
 import RoleSelector from "../common/RoleSelector";
 import toast, { Toaster } from "react-hot-toast";
+import zorvynLogoLight from "../../assets/zorvynlogolight.png";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -46,6 +47,7 @@ export default function Sidebar({ isOpen, onClose }) {
     e.preventDefault();
     // console.log("login pressed")
     toast.success("Logout Successful", {
+      position: 'top-center'
     });
   };
   return (
@@ -54,7 +56,7 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="sidebar-logo">
         <div className="logo-icon">
           <img
-            src="/src/assets/zorvynlogolight.png"
+            src={zorvynLogoLight}
             className="logo-image"
             width={30}
             height={30}
