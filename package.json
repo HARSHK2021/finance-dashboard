@@ -1,22 +1,20 @@
 {
-  "name": "zorvyn-finance-dashboard",
+  "name": "finova-finance-dashboard",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "date-fns": "^3.3.1",
+    "lucide-react": "^0.383.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.10.3",
-    "lucide-react": "^0.383.0",
-    "date-fns": "^3.3.1"
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
