@@ -1,14 +1,13 @@
 import { useApp } from "../../context/AppContext";
 import ThemeToggle from "../common/ThemeToggle";
 import RoleSelector from "../common/RoleSelector";
-import toast, { Toaster } from "react-hot-toast";
 import zorvynLogoLight from "../../assets/zorvynlogolight.png";
+import ActivityLog from "../common/ActivityLog";
 import {
   LayoutDashboard,
   ArrowLeftRight,
   TrendingUp,
   Shield,
-  Diamond,
   X,
   LogOut,
   ChevronRight,
@@ -36,7 +35,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { state, setActiveTab } = useApp();
+  const { state, setActiveTab, showToast } = useApp();
   const { activeTab } = state;
 
   const handleNav = (id) => {
@@ -45,10 +44,7 @@ export default function Sidebar({ isOpen, onClose }) {
   };
   const handleLogout = (e) => {
     e.preventDefault();
-    // console.log("login pressed")
-    toast.success("Logout Successful", {
-      position: 'top-center'
-    });
+    showToast("Session ended (demo)", "info");
   };
   return (
     <aside className={`sidebar ${isOpen ? "sidebar--open" : ""}`}>
@@ -105,6 +101,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Footer */}
       <div className="sidebar-footer">
+        <ActivityLog />
         <ThemeToggle />
         <RoleSelector />
         <div className="sidebar-secure-badge">
@@ -126,9 +123,7 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="logout-sub">End your session</div>
           </div>
           <ChevronRight size={13} className="logout-arrow" />
-        
         </div>
-        <Toaster />
       </div>
     </aside>
   );

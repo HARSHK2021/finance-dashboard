@@ -6,6 +6,7 @@ import DashboardPage from './components/Dashboard/DashboardPage'
 import TransactionList from './components/Transactions/TransactionList'
 import InsightsPanel from './components/Insights/InsightsPanel'
 import Toast from './components/common/Toast'
+import RoleChangeBanner from './components/common/RoleChangeBanner'
 
 export default function App() {
   const { state } = useApp()
@@ -31,6 +32,7 @@ export default function App() {
 
       <div className="main-content">
         <Header onMenuClick={() => setSidebarOpen(true)} />
+        <RoleChangeBanner />
         <div className="page-wrapper">
           <div className="page-animate" key={activeTab}>
             {activeTab === 'dashboard' && <DashboardPage />}

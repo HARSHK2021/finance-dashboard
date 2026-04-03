@@ -9,10 +9,11 @@ import {
   Legend,
 } from 'recharts'
 import { useApp } from '../../context/AppContext'
-import { getMonthlyData } from '../../utils/helpers'
+import { getMonthlyData, getReportPeriodLabel } from '../../utils/helpers'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
+  const yr = payload[0]?.payload?.year
   return (
     <div style={{
       background: 'var(--bg-elevated)',
@@ -24,7 +25,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       boxShadow: 'var(--shadow)',
     }}>
       <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, fontSize: '0.85rem' }}>
-        {label} 2024
+        {label}{yr ? ` ${yr}` : ''}
       </div>
       {payload.map((entry) => (
         <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
@@ -40,15 +41,28 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function BalanceTrend() {
-  const { state } = useApp()
-  const data = getMonthlyData(state.transactions)
+  const { state, scopedTransactions } = useApp()
+  const data = getMonthlyData(scopedTransactions)
+  const periodLabel = getReportPeriodLabel(state.reportPeriod)
+
+  if (data.length === 0) {
+    return (
+      <div className="card animate-fade-up-5" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 340 }}>
+        <div className="empty-state">
+          <div className="empty-icon">📈</div>
+          <div className="empty-title">No trend data</div>
+          <div className="empty-desc">Widen the report period or add dated transactions.</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="card animate-fade-up-5" style={{ height: '100%', minHeight: 340 }}>
       <div className="chart-header">
         <div>
           <div className="chart-title">Balance Trend</div>
-          <div className="chart-subtitle">Monthly income vs expenses — Jan to Jun 2024</div>
+          <div className="chart-subtitle">Monthly income vs expenses — {periodLabel}</div>
         </div>
         <div className="chart-legend">
           <div className="legend-item">

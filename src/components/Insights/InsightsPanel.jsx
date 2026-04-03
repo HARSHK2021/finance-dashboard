@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
+  ResponsiveContainer,
 } from 'recharts'
 import { useApp } from '../../context/AppContext'
-import { getMonthlyData, getCategoryBreakdown, formatCurrency } from '../../utils/helpers'
+import WhatIfScenario from './WhatIfScenario'
+import { getMonthlyData, getCategoryBreakdown, formatCurrency, getReportPeriodLabel } from '../../utils/helpers'
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../../data/mockData'
 import {
   TrendingUp, TrendingDown, Award, AlertCircle,
@@ -28,7 +29,7 @@ function StatCard({ icon: Icon, iconColor, label, value, sub, trend, index }) {
           <Icon size={15} color={iconColor} />
         </div>
       </div>
-      <div className="insight-value">{value}</div>
+      <div className="insight-value tabular-nums">{value}</div>
       {sub && <div className="insight-sub">{sub}</div>}
       {trend != null && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
@@ -50,6 +51,7 @@ function StatCard({ icon: Icon, iconColor, label, value, sub, trend, index }) {
 
 const BarTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
+  const yr = payload[0]?.payload?.year
   return (
     <div style={{
       background: 'var(--bg-elevated)',
@@ -60,7 +62,9 @@ const BarTooltip = ({ active, payload, label }) => {
       fontFamily: 'var(--font-body)',
       boxShadow: 'var(--shadow)',
     }}>
-      <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{label} 2024</div>
+      <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+        {label}{yr ? ` ${yr}` : ''}
+      </div>
       {payload.map(p => (
         <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
           <div style={{ width: 8, height: 8, borderRadius: 2, background: p.color }} />
@@ -73,27 +77,26 @@ const BarTooltip = ({ active, payload, label }) => {
 }
 
 export default function InsightsPanel() {
-  const { state } = useApp()
-  const { transactions } = state
+  const { state, scopedTransactions: transactions } = useApp()
+  const periodLabel = getReportPeriodLabel(state.reportPeriod)
 
   const monthlyData = useMemo(() => getMonthlyData(transactions), [transactions])
   const categoryData = useMemo(() => getCategoryBreakdown(transactions), [transactions])
 
-  // Compute months
-  const currentMonth = monthlyData[5]   // Jun
-  const prevMonth = monthlyData[4]      // May
+  const currentMonth = monthlyData.length ? monthlyData[monthlyData.length - 1] : null
+  const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null
   const allMonths = monthlyData
 
-  // Monthly change
-  const incomeChange = prevMonth.income > 0
-    ? ((currentMonth.income - prevMonth.income) / prevMonth.income) * 100 : 0
-  const expenseChange = prevMonth.expenses > 0
-    ? ((currentMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100 : 0
+  const incomeChange =
+    prevMonth && currentMonth && prevMonth.income > 0
+      ? ((currentMonth.income - prevMonth.income) / prevMonth.income) * 100
+      : 0
+  const expenseChange =
+    prevMonth && currentMonth && prevMonth.expenses > 0
+      ? ((currentMonth.expenses - prevMonth.expenses) / prevMonth.expenses) * 100
+      : 0
 
-  // Best month (highest net)
-  const bestMonth = [...allMonths].sort((a, b) => b.net - a.net)[0]
-  // Worst month
-  const worstMonth = [...allMonths].sort((a, b) => a.net - b.net)[0]
+  const bestMonth = allMonths.length ? [...allMonths].sort((a, b) => b.net - a.net)[0] : null
 
   // Average daily spend (all time)
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
@@ -133,8 +136,8 @@ export default function InsightsPanel() {
       icon: Award,
       iconColor: 'var(--amber)',
       label: 'Best Month',
-      value: bestMonth.month,
-      sub: `Net ${formatCurrency(bestMonth.net)}`,
+      value: bestMonth ? bestMonth.month : '—',
+      sub: bestMonth ? `Net ${formatCurrency(bestMonth.net)}` : 'Need period data',
     },
     {
       icon: AlertCircle,
@@ -164,7 +167,9 @@ export default function InsightsPanel() {
       <div className="page-header animate-fade-up">
         <div>
           <div className="page-title">Financial Insights</div>
-          <div className="page-desc">Trends, patterns, and key observations from your data</div>
+          <div className="page-desc">
+            Trends for <strong>{periodLabel}</strong> — same scope as the header report period
+          </div>
         </div>
       </div>
 
@@ -182,7 +187,9 @@ export default function InsightsPanel() {
           <div className="chart-header">
             <div>
               <div className="chart-title">Monthly Comparison</div>
-              <div className="chart-subtitle">Income vs expenses — 6 month view</div>
+              <div className="chart-subtitle">
+                Income vs expenses — {monthlyData.length} month(s) · {periodLabel}
+              </div>
             </div>
             <div className="chart-legend">
               <div className="legend-item">
@@ -195,85 +202,137 @@ export default function InsightsPanel() {
               </div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlyData} barGap={4} barCategoryGap="30%">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-body)' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-body)' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
-              />
-              <Tooltip content={<BarTooltip />} />
-              <Bar dataKey="income" fill="var(--income)" radius={[5, 5, 0, 0]} opacity={0.85} />
-              <Bar dataKey="expenses" fill="var(--expense)" radius={[5, 5, 0, 0]} opacity={0.85} />
-            </BarChart>
-          </ResponsiveContainer>
+          {monthlyData.length === 0 ? (
+            <div className="empty-state" style={{ padding: '48px 24px', minHeight: 220 }}>
+              <div className="empty-icon">📅</div>
+              <div className="empty-title">No months in this period</div>
+              <div className="empty-desc">
+                Widen the report period in the header or add dated transactions.
+              </div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={monthlyData} barGap={4} barCategoryGap="30%">
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-body)' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-body)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip content={<BarTooltip />} />
+                <Bar dataKey="income" fill="var(--income)" radius={[5, 5, 0, 0]} opacity={0.85} />
+                <Bar dataKey="expenses" fill="var(--expense)" radius={[5, 5, 0, 0]} opacity={0.85} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* This month vs last month */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Current month summary */}
           <div className="card" style={{ flex: 1 }}>
-            <div className="chart-title" style={{ marginBottom: 14 }}>Jun vs May 2024</div>
-            {[
-              {
-                label: 'Income',
-                cur: currentMonth.income,
-                prev: prevMonth.income,
-                change: incomeChange,
-                color: 'var(--income)',
-              },
-              {
-                label: 'Expenses',
-                cur: currentMonth.expenses,
-                prev: prevMonth.expenses,
-                change: expenseChange,
-                color: 'var(--expense)',
-              },
-              {
-                label: 'Net Balance',
-                cur: currentMonth.net,
-                prev: prevMonth.net,
-                change: prevMonth.net !== 0 ? ((currentMonth.net - prevMonth.net) / Math.abs(prevMonth.net)) * 100 : 0,
-                color: currentMonth.net >= 0 ? 'var(--income)' : 'var(--expense)',
-              },
-            ].map(item => (
-              <div key={item.label} style={{ marginBottom: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'baseline' }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>{item.label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                      vs {formatCurrency(item.prev)}
+            <div className="chart-title" style={{ marginBottom: 14 }}>
+              {currentMonth && prevMonth
+                ? `${currentMonth.month} vs ${prevMonth.month}${
+                    currentMonth.year ? ` ${currentMonth.year}` : ''
+                  }`
+                : 'Month-over-month'}
+            </div>
+            {currentMonth && prevMonth ? (
+              [
+                {
+                  label: 'Income',
+                  cur: currentMonth.income,
+                  prev: prevMonth.income,
+                  change: incomeChange,
+                  color: 'var(--income)',
+                },
+                {
+                  label: 'Expenses',
+                  cur: currentMonth.expenses,
+                  prev: prevMonth.expenses,
+                  change: expenseChange,
+                  color: 'var(--expense)',
+                },
+                {
+                  label: 'Net Balance',
+                  cur: currentMonth.net,
+                  prev: prevMonth.net,
+                  change:
+                    prevMonth.net !== 0
+                      ? ((currentMonth.net - prevMonth.net) / Math.abs(prevMonth.net)) * 100
+                      : 0,
+                  color: currentMonth.net >= 0 ? 'var(--income)' : 'var(--expense)',
+                },
+              ].map((item) => (
+                <div key={item.label} style={{ marginBottom: 14 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: 6,
+                      alignItems: 'baseline',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {item.label}
                     </span>
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 700,
-                      color: (item.label === 'Expenses' ? item.change <= 0 : item.change >= 0) ? 'var(--income)' : 'var(--expense)',
-                    }}>
-                      {item.change >= 0 ? '▲' : '▼'} {Math.abs(item.change).toFixed(1)}%
-                    </span>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: item.color }}>
-                      {formatCurrency(item.cur)}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        vs {formatCurrency(item.prev)}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color:
+                            (item.label === 'Expenses' ? item.change <= 0 : item.change >= 0)
+                              ? 'var(--income)'
+                              : 'var(--expense)',
+                        }}
+                      >
+                        {item.change >= 0 ? '▲' : '▼'} {Math.abs(item.change).toFixed(1)}%
+                      </span>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 700, color: item.color }}>
+                        {formatCurrency(item.cur)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="progress-bar-bg">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (item.cur / Math.max(item.cur, item.prev, 1)) * 100
+                        )}%`,
+                        background: item.color,
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="progress-bar-bg">
-                  <div
-                    className="progress-bar-fill"
-                    style={{
-                      width: `${Math.min(100, (item.cur / Math.max(item.cur, item.prev)) * 100)}%`,
-                      background: item.color,
-                    }}
-                  />
-                </div>
+              ))
+            ) : (
+              <div className="insights-compare-empty">
+                <p>At least two months of activity in this period are needed to compare consecutive months.</p>
+                <p className="insights-compare-hint">
+                  Try &ldquo;All data&rdquo; in the header or pick a wider range.
+                </p>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Quick observations */}
@@ -287,7 +346,13 @@ export default function InsightsPanel() {
                 savingsRate >= 20
                   ? { icon: '🌟', text: `Great! You're saving ${savingsRate.toFixed(0)}% of income`, color: 'var(--income)' }
                   : { icon: '💡', text: `Aim to save 20%+ of income (currently ${savingsRate.toFixed(0)}%)`, color: 'var(--amber)' },
-                { icon: '🏆', text: `${bestMonth.month} was your best month with ${formatCurrency(bestMonth.net)} net`, color: 'var(--accent)' },
+                bestMonth
+                  ? {
+                      icon: '🏆',
+                      text: `${bestMonth.month} was your best month with ${formatCurrency(bestMonth.net)} net`,
+                      color: 'var(--accent)',
+                    }
+                  : null,
                 topCategory
                   ? { icon: '📊', text: `${topCategory.name} is your biggest spend at ${formatCurrency(topCategory.value)}`, color: 'var(--text-secondary)' }
                   : null,
@@ -315,7 +380,7 @@ export default function InsightsPanel() {
         <div className="chart-header" style={{ marginBottom: 20 }}>
           <div>
             <div className="chart-title">Spending by Category</div>
-            <div className="chart-subtitle">All-time breakdown with relative share</div>
+            <div className="chart-subtitle">Breakdown for {periodLabel}</div>
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             Total: {formatCurrency(totalExpenses)}
@@ -373,6 +438,8 @@ export default function InsightsPanel() {
           )}
         </div>
       </div>
+
+      <WhatIfScenario transactions={transactions} />
     </div>
   )
 }

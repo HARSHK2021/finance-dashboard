@@ -1,4 +1,4 @@
-import { format, parseISO, startOfMonth, isSameMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export const formatCurrency = (amount, compact = false) => {
   if (compact && amount >= 1000) {
@@ -41,20 +41,55 @@ export const getMonthYear = (dateStr) => {
   }
 };
 
-export const getMonthlyData = (transactions) => {
-  const months = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06'];
-  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+/** Transactions visible for dashboard / insights / scoped table (before user filters). */
+export const filterByReportPeriod = (transactions, reportPeriod) => {
+  if (!reportPeriod || reportPeriod.mode === 'all') return transactions;
+  const { startMonth, endMonth } = reportPeriod;
+  if (!startMonth || !endMonth) return transactions;
+  return transactions.filter((t) => {
+    const ym = t.date.substring(0, 7);
+    return ym >= startMonth && ym <= endMonth;
+  });
+};
 
-  return months.map((month, i) => {
-    const monthTxns = transactions.filter((t) => t.date.startsWith(month));
+export const getReportPeriodLabel = (reportPeriod) => {
+  if (!reportPeriod || reportPeriod.mode === 'all') return 'All data';
+  const { startMonth, endMonth } = reportPeriod;
+  if (!startMonth || !endMonth) return 'All data';
+  try {
+    const s = format(parseISO(`${startMonth}-01`), 'MMM yyyy');
+    const e = format(parseISO(`${endMonth}-01`), 'MMM yyyy');
+    return startMonth === endMonth ? s : `${s} – ${e}`;
+  } catch {
+    return 'Custom range';
+  }
+};
+
+/**
+ * Monthly series derived from transaction dates (not hard-coded months).
+ */
+export const getMonthlyData = (transactions) => {
+  const monthSet = new Set(transactions.map((t) => t.date.substring(0, 7)));
+  const months = [...monthSet].sort();
+  return months.map((ym) => {
+    let label = ym;
+    let year = 0;
+    try {
+      const d = parseISO(`${ym}-01`);
+      label = format(d, 'MMM');
+      year = Number(format(d, 'yyyy'));
+    } catch {
+      /* keep defaults */
+    }
+    const monthTxns = transactions.filter((t) => t.date.startsWith(ym));
     const income = monthTxns
       .filter((t) => t.type === 'income')
       .reduce((s, t) => s + t.amount, 0);
     const expenses = monthTxns
       .filter((t) => t.type === 'expense')
       .reduce((s, t) => s + t.amount, 0);
-    const balance = income - expenses;
-    return { month: labels[i], income, expenses, balance, net: income - expenses };
+    const net = income - expenses;
+    return { month: label, monthKey: ym, year, income, expenses, balance: net, net };
   });
 };
 
@@ -89,6 +124,39 @@ export const getMonthlyTotals = (transactions, monthStr) => {
 
 export const generateId = () =>
   `txn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+/** Three plain-language bullets for the dashboard executive strip. */
+export const buildExecutiveBullets = (transactions) => {
+  const { income, expenses, balance, savingsRate } = getTotals(transactions);
+  const monthly = getMonthlyData(transactions);
+  const categoryData = getCategoryBreakdown(transactions);
+  const top = categoryData[0];
+
+  if (!transactions.length) {
+    return [
+      'No transactions fall in the selected report period.',
+      'Choose “All data” or widen the range in the header to see your full picture.',
+      'Transactions, exports, and charts all respect this same period.',
+    ];
+  }
+
+  const b1 =
+    balance >= 0
+      ? `Net position is positive at ${formatCurrency(balance)} (${savingsRate.toFixed(1)}% of income saved).`
+      : `Outflows exceed inflows by ${formatCurrency(Math.abs(balance))}; discretionary categories are the first place to optimize.`;
+
+  const sortedByNet = [...monthly].sort((a, b) => b.net - a.net);
+  const best = sortedByNet[0];
+  const b2 = best
+    ? `Strongest month by net: ${best.month}${best.year ? ` ${best.year}` : ''} (${formatCurrency(best.net)}).`
+    : 'Add more dated activity to compare months.';
+
+  const b3 = top
+    ? `Top spend driver: ${top.name} at ${formatCurrency(top.value)} (${top.pct.toFixed(0)}% of expenses in this period).`
+    : 'No expenses in this range—income-only stretch.';
+
+  return [b1, b2, b3];
+};
 
 export const exportToCSV = (transactions) => {
   const headers = ['Date', 'Description', 'Category', 'Type', 'Amount', 'Merchant'];

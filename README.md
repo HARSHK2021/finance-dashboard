@@ -1,29 +1,20 @@
-# 💎 Finova — Finance Dashboard
+# Zorvyn — Modern Finance Dashboard
 
-A modern, feature-rich personal finance dashboard built with React and JavaScript. Track income, monitor expenses, analyze spending patterns, and manage transactions with a sleek, multi-theme UI.
+A polished, browser-only finance dashboard built with **React 18** and **Vite**. Track income and expenses, explore charts, filter and export transactions, and switch themes — with a single **report period** that keeps the dashboard, insights, and table aligned.
 
 ---
 
-## 🚀 Quick Start
+## Quick start
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-
-### Installation
+**Prerequisites:** Node.js 18+
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Start development server
 npm run dev
-
-# 3. Open in browser
-# → http://localhost:5173
 ```
 
-### Build for Production
+Open **http://localhost:5173**
+
 ```bash
 npm run build
 npm run preview
@@ -31,122 +22,115 @@ npm run preview
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎛️ Dashboard Overview
-- **4 Summary Cards** — Total Balance, Income, Expenses, Savings Rate with animated number counters
-- **Balance Trend Chart** — Area chart showing 6-month income vs expenses vs net trend
-- **Spending Breakdown** — Interactive donut chart with category legend
-- **Recent Activity** — Latest 6 transactions with merchant info
+### Dashboard
 
-### 💳 Transactions
-- **50+ Mock Transactions** spanning January–June 2024 across 14 categories
-- **Smart Filtering** — Search by description/merchant, filter by category, type, and month
-- **Sorting** — Click any column header to sort ascending/descending
-- **Pagination** — 10 items per page with intuitive page controls
-- **Export** — Download filtered transactions as CSV or JSON
-- **Live Summary Bar** — Shows filtered income/expense/net totals in real time
+- **Executive summary** — Three auto-generated bullets (net position, best month, top spend driver) for the **current report period**.
+- **KPI cards** — Balance, income, expenses, savings rate; count-up animation respects **prefers-reduced-motion**.
+- **Balance trend** — Area chart from **actual transaction months** (not hard-coded).
+- **Spending breakdown** — Donut chart by category for the selected period.
+- **Recent activity** — Latest six rows scoped to the same period.
 
-### 👥 Role-Based UI (RBAC)
-Three simulated roles switchable via the sidebar dropdown:
+### Report period (header)
 
-| Role | Add | Edit | Delete | View |
-|------|-----|------|--------|------|
-| **Admin** | ✅ | ✅ | ✅ | ✅ |
-| **Manager** | ✅ | ❌ | ❌ | ✅ |
-| **Viewer** | ❌ | ❌ | ❌ | ✅ |
+- Presets: **All data**, **dataset span**, **Q1 / Q2 / H1 2024** (when data exists).
+- **Dashboard**, **Insights**, and **Transactions** (base list) all use this scope.
+- **CSV / JSON exports** include whatever is on screen: period scope **plus** table search/filters.
 
-### 📊 Insights
-- **Key Stat Cards** — Avg daily spend, total saved, best month, top spending category
-- **Monthly Comparison** — Jun vs May bar chart + progress comparison
-- **Key Observations** — Auto-generated financial health insights
-- **Category Breakdown** — Animated progress bars for all expense categories
+### Transactions
 
-### 🎨 Theme System
-Three polished themes toggled from the sidebar:
+- Search (with **deferred** filtering for smoother typing), category/type/month filters, sortable columns, pagination.
+- **Accessible column headers** — sort controls are `<button>`s with **`aria-sort`**.
+- **Filter chips** — quick clear for each active filter; full reset still available.
+- **Pagination** — stable list keys (no fragment key warnings).
 
-- 🌙 **Dark** — Deep navy with cyan/emerald accents (default)
-- 🌆 **Dim** — Mid-slate, softer contrast (between dark and light)
-- ☀️ **Light** — Clean white with blue accents
+### Insights
 
-All themes use CSS custom properties for seamless transitions.
+- Monthly series and comparisons derived from **scoped** data.
+- **Last vs previous month** block uses the **last two months in the period**, not fixed indices.
+- Empty states when there are **too few months** for a chart or comparison.
+- **What-if slider** — rough “trim top category by X%” savings illustration (clearly labeled as illustrative).
 
-### 💾 Data Persistence
-- Transactions, theme preference, and role selection are persisted in **localStorage**
-- Data survives page refreshes automatically
+### Roles (RBAC demo)
 
-### ➕ Add / Edit Transactions (Admin & Manager)
-- Income/Expense type toggle
-- Form validation with inline error messages
-- Category auto-updates based on transaction type
-- Double-click delete confirmation for safety
+| Role    | Add | Edit | Delete | View |
+|---------|:---:|:----:|:------:|:----:|
+| **Admin**  | Yes | Yes  | Yes    | Yes  |
+| **Viewer** | No  | No   | No     | Yes  |
+
+- **Role change banner** appears under the header when you switch roles (dismissible).
+- **Single toast system** — no duplicate toast libraries.
+
+### Audit trail
+
+- **Recent activity** in the sidebar logs add / edit / delete (demo, last 50 events, persisted in `localStorage`).
+- **Admin** can clear the log.
+
+### Themes
+
+- **Dark**, **Dim**, **Light** — CSS custom properties, persisted.
+
+### Data
+
+- Mock transactions in **`src/data/mockData.js`**; state persisted under **`zorvyn_*`** keys in `localStorage`.
 
 ---
 
-## 🏗️ Project Structure
+## Ideas I implemented (portfolio narrative)
+
+These are concrete product concepts I wanted to showcase for an organization review:
+
+1. **One report period for everything** — Avoids the classic demo bug where charts show “all time” but the table is filtered differently. The header selector is the single source of truth.
+2. **Executive summary strip** — Gives executives three sentences before they scroll; computed from the same scoped data as the charts.
+3. **Audit / activity log** — Signals awareness of enterprise expectations (who changed what), even in a front-end-only demo.
+4. **What-if scenario** — Shows you can translate analytics into **action** (rough savings from trimming a top category), with honest labeling that it is not a forecast engine.
+5. **Accessible data table** — Sorting is keyboard-focusable and exposes **`aria-sort`**; amounts use **tabular numerals** for alignment.
+6. **Motion accessibility** — Respects **prefers-reduced-motion** for staggered animations.
+7. **Robust time-axis logic** — Monthly aggregates use **dates present in the data** instead of hard-coded June vs May.
+
+---
+
+## Project structure
 
 ```
 src/
 ├── components/
+│   ├── common/           # PeriodSelector, ExecutiveSummary, RoleChangeBanner, ActivityLog, ThemeToggle, Toast…
 │   ├── Dashboard/
-│   │   ├── DashboardPage.jsx      # Main dashboard layout
-│   │   ├── SummaryCards.jsx       # 4 KPI cards with counter animation
-│   │   ├── BalanceTrend.jsx       # Recharts AreaChart
-│   │   └── SpendingBreakdown.jsx  # Recharts PieChart/donut
 │   ├── Transactions/
-│   │   ├── TransactionList.jsx    # Full table with filters & pagination
-│   │   └── TransactionModal.jsx   # Add/Edit modal form
-│   ├── Insights/
-│   │   └── InsightsPanel.jsx      # Analytics, bar charts, progress bars
-│   ├── Layout/
-│   │   ├── Sidebar.jsx            # Navigation + theme/role controls
-│   │   └── Header.jsx             # Top bar with date + role pill
-│   └── common/
-│       ├── ThemeToggle.jsx        # Dark/Dim/Light switcher
-│       ├── RoleSelector.jsx       # Role dropdown
-│       └── Toast.jsx              # Notification toasts
-├── context/
-│   └── AppContext.jsx             # useReducer-based global state
-├── data/
-│   └── mockData.js                # 60+ transactions + metadata
-├── hooks/
-│   └── useLocalStorage.js         # Custom hook for localStorage sync
-├── utils/
-│   └── helpers.js                 # Formatters, aggregators, export utils
-└── styles/
-    └── globals.css                # CSS variables, themes, all component styles
+│   ├── Insights/          # InsightsPanel, WhatIfScenario
+│   └── Layout/
+├── context/AppContext.jsx
+├── data/mockData.js
+├── utils/helpers.js       # formatters, getMonthlyData, report period helpers, export
+└── styles/globals.css
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech stack
 
-| Technology | Purpose |
-|-----------|---------|
-| React 18 | UI framework |
-| Vite 5 | Build tool & dev server |
-| Recharts | Charts (area, bar, pie) |
-| Lucide React | Icon library |
-| date-fns | Date formatting |
-| CSS Custom Properties | Theme system |
-| localStorage | Data persistence |
-| React Context + useReducer | State management |
-
----
-
-## 🎨 Design Decisions
-
-- **Aesthetic**: Premium fintech — deep navy dark theme with cyan/emerald/red accents
-- **Fonts**: Sora (headings) + DM Sans (body) via Google Fonts
-- **CSS Architecture**: Single globals.css with CSS variables — no CSS-in-JS, no Tailwind, full control
-- **Animations**: CSS keyframe animations (fadeSlideUp, countUp, shimmer) with staggered delays
-- **Responsiveness**: CSS Grid with breakpoints at 1200px, 900px, 600px; sidebar collapses to mobile overlay
+| Technology | Role |
+|------------|------|
+| React 18 | UI |
+| Vite 5 | Build |
+| Recharts | Charts |
+| Lucide React | Icons |
+| date-fns | Dates |
+| Context + useReducer | State |
+| localStorage | Persistence |
 
 ---
 
-## 📝 Notes
+## Production assets
 
-- No backend required — all data is mocked and runs entirely in the browser
-- All charts animate on load via Recharts built-in animation
-- The delete button requires two clicks as a safety confirmation UX pattern
-- Switching roles instantly updates the UI — no page reload needed
+Import images and other bundled assets in components (for example `import logo from '...'`). Paths like `/src/assets/...` work in dev but **fail after `vite build`**; the build hashes files into `dist/assets/`.
+
+---
+
+## Notes
+
+- No backend — all data is local / mocked.
+- Delete uses a **double-click confirm** on the trash action.
+- **`dist/`** is gitignored; deploy from source (for example **Vercel** runs `npm run build` automatically).

@@ -1,8 +1,9 @@
 import { useApp } from '../../context/AppContext'
+import ExecutiveSummary from '../common/ExecutiveSummary'
 import SummaryCards from './SummaryCards'
 import BalanceTrend from './BalanceTrend'
 import SpendingBreakdown from './SpendingBreakdown'
-import { formatCurrency, formatShortDate } from '../../utils/helpers'
+import { formatCurrency, formatShortDate, getReportPeriodLabel } from '../../utils/helpers'
 import { CATEGORY_ICONS } from '../../data/mockData'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
@@ -86,17 +87,21 @@ function RecentTransactions({ transactions }) {
 }
 
 export default function DashboardPage() {
-  const { state } = useApp()
-  const { transactions } = state
+  const { state, scopedTransactions } = useApp()
+  const periodLabel = getReportPeriodLabel(state.reportPeriod)
 
   return (
     <div>
       <div className="page-header animate-fade-up">
         <div>
           <div className="page-title">Financial Overview</div>
-          <div className="page-desc">Your complete financial picture — Jan to Jun 2024</div>
+          <div className="page-desc">
+            Report period: {periodLabel} — charts and totals stay in sync with the header selector
+          </div>
         </div>
       </div>
+
+      <ExecutiveSummary />
 
       <SummaryCards />
 
@@ -105,7 +110,7 @@ export default function DashboardPage() {
         <SpendingBreakdown />
       </div>
 
-      <RecentTransactions transactions={transactions} />
+      <RecentTransactions transactions={scopedTransactions} />
     </div>
   )
 }

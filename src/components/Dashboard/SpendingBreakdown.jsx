@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useApp } from '../../context/AppContext'
-import { getCategoryBreakdown } from '../../utils/helpers'
+import { getCategoryBreakdown, getReportPeriodLabel } from '../../utils/helpers'
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '../../data/mockData'
 
 const CustomTooltip = ({ active, payload }) => {
@@ -30,8 +30,9 @@ const CustomTooltip = ({ active, payload }) => {
 }
 
 export default function SpendingBreakdown() {
-  const { state } = useApp()
-  const data = getCategoryBreakdown(state.transactions)
+  const { state, scopedTransactions } = useApp()
+  const data = getCategoryBreakdown(scopedTransactions)
+  const periodLabel = getReportPeriodLabel(state.reportPeriod)
   const top5 = data.slice(0, 5)
 
   if (!data.length) {
@@ -51,7 +52,7 @@ export default function SpendingBreakdown() {
       <div className="chart-header">
         <div>
           <div className="chart-title">Spending Breakdown</div>
-          <div className="chart-subtitle">By category, all time</div>
+          <div className="chart-subtitle">By category — {periodLabel}</div>
         </div>
       </div>
 

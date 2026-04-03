@@ -1,6 +1,6 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect, useMemo } from 'react';
 import { initialTransactions } from '../data/mockData';
-import { generateId } from '../utils/helpers';
+import { generateId, filterByReportPeriod } from '../utils/helpers';
 
 const AppContext = createContext(null);
 
@@ -8,7 +8,11 @@ const STORAGE_KEYS = {
   transactions: 'zorvyn_transactions',
   theme: 'zorvyn_theme',
   role: 'zorvyn_role',
+  reportPeriod: 'zorvyn_report_period',
+  auditLog: 'zorvyn_audit_log',
 };
+
+const MAX_AUDIT = 50;
 
 const loadFromStorage = (key, fallback) => {
   try {
@@ -19,11 +23,37 @@ const loadFromStorage = (key, fallback) => {
   }
 };
 
+const loadReportPeriod = () => {
+  const r = loadFromStorage(STORAGE_KEYS.reportPeriod, null);
+  if (!r || typeof r !== 'object') return { mode: 'all' };
+  if (r.mode === 'all') return { mode: 'all' };
+  if (r.mode === 'range' && r.startMonth && r.endMonth) {
+    return { mode: 'range', startMonth: r.startMonth, endMonth: r.endMonth };
+  }
+  return { mode: 'all' };
+};
+
+function pushAuditEntry(log, entry) {
+  const item = {
+    id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    at: Date.now(),
+    ...entry,
+  };
+  return [item, ...log].slice(0, MAX_AUDIT);
+}
+
+const loadAuditLog = () => {
+  const raw = loadFromStorage(STORAGE_KEYS.auditLog, []);
+  return Array.isArray(raw) ? raw.slice(0, MAX_AUDIT) : [];
+};
+
 const initialState = {
   transactions: loadFromStorage(STORAGE_KEYS.transactions, initialTransactions),
   theme: loadFromStorage(STORAGE_KEYS.theme, 'dark'),
   role: loadFromStorage(STORAGE_KEYS.role, 'admin'),
   activeTab: 'dashboard',
+  reportPeriod: loadReportPeriod(),
+  auditLog: loadAuditLog(),
   filters: {
     search: '',
     category: 'all',
@@ -46,6 +76,12 @@ function reducer(state, action) {
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
 
+    case 'SET_REPORT_PERIOD':
+      return { ...state, reportPeriod: action.payload };
+
+    case 'CLEAR_AUDIT':
+      return { ...state, auditLog: [] };
+
     case 'SET_FILTERS':
       return { ...state, filters: { ...state.filters, ...action.payload } };
 
@@ -64,19 +100,39 @@ function reducer(state, action) {
 
     case 'ADD_TRANSACTION': {
       const newTxn = { ...action.payload, id: generateId() };
-      return { ...state, transactions: [newTxn, ...state.transactions] };
+      const auditLog = pushAuditEntry(state.auditLog, {
+        action: 'add',
+        label: 'Added transaction',
+        detail: newTxn.description,
+      });
+      return { ...state, transactions: [newTxn, ...state.transactions], auditLog };
     }
 
     case 'EDIT_TRANSACTION': {
+      const before = state.transactions.find((t) => t.id === action.payload.id);
       const updated = state.transactions.map((t) =>
         t.id === action.payload.id ? { ...t, ...action.payload } : t
       );
-      return { ...state, transactions: updated };
+      const auditLog = pushAuditEntry(state.auditLog, {
+        action: 'edit',
+        label: 'Updated transaction',
+        detail: action.payload.description ?? before?.description ?? '',
+      });
+      return { ...state, transactions: updated, auditLog };
     }
 
     case 'DELETE_TRANSACTION': {
-      const filtered = state.transactions.filter((t) => t.id !== action.payload);
-      return { ...state, transactions: filtered };
+      const id = action.payload;
+      const victim = state.transactions.find((t) => t.id === id);
+      const filtered = state.transactions.filter((t) => t.id !== id);
+      const auditLog = victim
+        ? pushAuditEntry(state.auditLog, {
+            action: 'delete',
+            label: 'Deleted transaction',
+            detail: victim.description,
+          })
+        : state.auditLog;
+      return { ...state, transactions: filtered, auditLog };
     }
 
     case 'SET_TOAST':
@@ -93,7 +149,11 @@ function reducer(state, action) {
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Persist to localStorage
+  const scopedTransactions = useMemo(
+    () => filterByReportPeriod(state.transactions, state.reportPeriod),
+    [state.transactions, state.reportPeriod]
+  );
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(state.transactions));
   }, [state.transactions]);
@@ -107,7 +167,14 @@ export function AppProvider({ children }) {
     localStorage.setItem(STORAGE_KEYS.role, JSON.stringify(state.role));
   }, [state.role]);
 
-  // Auto-clear toast
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.reportPeriod, JSON.stringify(state.reportPeriod));
+  }, [state.reportPeriod]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.auditLog, JSON.stringify(state.auditLog));
+  }, [state.auditLog]);
+
   useEffect(() => {
     if (state.toast) {
       const t = setTimeout(() => dispatch({ type: 'CLEAR_TOAST' }), 3000);
@@ -123,6 +190,8 @@ export function AppProvider({ children }) {
     setTheme: (theme) => dispatch({ type: 'SET_THEME', payload: theme }),
     setRole: (role) => dispatch({ type: 'SET_ROLE', payload: role }),
     setActiveTab: (tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab }),
+    setReportPeriod: (period) => dispatch({ type: 'SET_REPORT_PERIOD', payload: period }),
+    clearAuditLog: () => dispatch({ type: 'CLEAR_AUDIT' }),
     setFilters: (filters) => dispatch({ type: 'SET_FILTERS', payload: filters }),
     resetFilters: () => dispatch({ type: 'RESET_FILTERS' }),
     addTransaction: (txn) => {
@@ -141,7 +210,7 @@ export function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider value={{ state, ...actions }}>
+    <AppContext.Provider value={{ state, scopedTransactions, ...actions }}>
       {children}
     </AppContext.Provider>
   );

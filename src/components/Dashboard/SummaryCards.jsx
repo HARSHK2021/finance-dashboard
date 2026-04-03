@@ -8,6 +8,13 @@ function useCountUp(target, duration = 1000) {
   const raf = useRef(null)
 
   useEffect(() => {
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      setValue(target)
+      return undefined
+    }
     const start = performance.now()
     const animate = (now) => {
       const elapsed = now - start
@@ -37,7 +44,7 @@ function SummaryCard({ className, icon: Icon, iconClass, label, value, change, c
         <Icon size={20} />
       </div>
       <div className="summary-label">{label}</div>
-      <div className="summary-value">{formatVal(animated)}</div>
+      <div className="summary-value tabular-nums">{formatVal(animated)}</div>
       {change != null && (
         <div className={`summary-change ${changeDir}`}>
           {changeDir === 'up' ? '↑' : changeDir === 'down' ? '↓' : '◆'} {change}
@@ -48,9 +55,8 @@ function SummaryCard({ className, icon: Icon, iconClass, label, value, change, c
 }
 
 export default function SummaryCards() {
-  const { state } = useApp()
-  const { transactions } = state
-  const { income, expenses, balance, savingsRate } = getTotals(transactions)
+  const { scopedTransactions } = useApp()
+  const { income, expenses, balance, savingsRate } = getTotals(scopedTransactions)
 
   const cards = [
     {
@@ -102,7 +108,7 @@ export default function SummaryCards() {
                 <card.icon size={20} />
               </div>
               <div className="summary-label">{card.label}</div>
-              <div className="summary-value" style={{ fontSize: '1.5rem' }}>
+              <div className="summary-value tabular-nums" style={{ fontSize: '1.5rem' }}>
                 {savingsRate.toFixed(1)}%
               </div>
               <div className={`summary-change ${card.changeDir}`}>

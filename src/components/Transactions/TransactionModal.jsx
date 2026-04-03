@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import { CATEGORIES, CATEGORY_ICONS } from '../../data/mockData'
+import CustomSelect from '../common/CustomSelect'
 import { X, TrendingUp, TrendingDown } from 'lucide-react'
 
 const EMPTY_FORM = {
@@ -21,6 +22,17 @@ export default function TransactionModal({ editData, onClose }) {
   const [errors, setErrors] = useState({})
 
   const categories = form.type === 'income' ? CATEGORIES.income : CATEGORIES.expense
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: 'Select a category...' },
+      ...categories.map((c) => ({
+        value: c,
+        label: `${CATEGORY_ICONS[c]} ${c}`,
+      })),
+    ],
+    [categories],
+  )
 
   useEffect(() => {
     // Reset category when type changes if current category doesn't match
@@ -149,19 +161,17 @@ export default function TransactionModal({ editData, onClose }) {
 
           {/* Category */}
           <div className="form-group" style={{ marginTop: 16 }}>
-            <label className="form-label">Category</label>
-            <select
-              className="form-select"
+            <label className="form-label" id="txn-modal-category-label" htmlFor="txn-modal-category">
+              Category
+            </label>
+            <CustomSelect
+              id="txn-modal-category"
+              ariaLabelledBy="txn-modal-category-label"
               value={form.category}
-              onChange={(e) => set('category', e.target.value)}
-            >
-              <option value="">Select a category...</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {CATEGORY_ICONS[c]} {c}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => set('category', v)}
+              options={categoryOptions}
+              triggerClassName="form-select"
+            />
             {errors.category && (
               <div style={{ fontSize: '0.75rem', color: 'var(--expense)', marginTop: 4 }}>
                 {errors.category}

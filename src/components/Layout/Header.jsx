@@ -1,6 +1,7 @@
 import { useApp } from '../../context/AppContext'
 import { Bell, Menu, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
+import PeriodSelector from '../common/PeriodSelector'
 
 const PAGE_INFO = {
   dashboard: { title: 'Dashboard', desc: 'Your financial overview' },
@@ -38,6 +39,8 @@ export default function Header({ onMenuClick }) {
       </div>
 
       <div className="header-spacer" />
+
+      <PeriodSelector />
 
       {/* Date — hidden on small screens */}
       <div className="header-date">
