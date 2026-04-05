@@ -28,10 +28,10 @@ export default function PeriodSelector() {
 
     const min = months[0];
     const max = months[months.length - 1];
-    opts.push({
-      value: `range:${min}:${max}`,
-      label: `Dataset span (${min} → ${max})`,
-    });
+    // opts.push({
+    //   value: `range:${min}:${max}`,
+    //   label: `Dataset span (${min} → ${max})`,
+    // });
 
     const addIf = (start, end, label) => {
       if (months.some((m) => m >= start && m <= end)) {

@@ -33,7 +33,7 @@ export default function WhatIfScenario({ transactions }) {
         <div>
           <div className="chart-title">
             <Sparkles size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8 }} />
-            What-if: trim top category
+            What-if : trim top category
           </div>
           <div className="chart-subtitle">
             Slide to see rough savings if you reduce {CATEGORY_ICONS[top.name]} {top.name} spending in this

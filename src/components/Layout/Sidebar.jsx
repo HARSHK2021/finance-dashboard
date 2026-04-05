@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
             alt="Zorvyn"
           />
         </div>
-        <span className="logo-text">Zorvyn</span>
+        <span className="logo-text">Fintech</span>
 
         {/* Close button - mobile only */}
         <button
