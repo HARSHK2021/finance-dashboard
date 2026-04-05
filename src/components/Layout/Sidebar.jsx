@@ -51,13 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="logo-icon">
-          <img
-            src={zorvynLogoLight}
-            className="logo-image"
-            width={30}
-            height={30}
-            alt="Zorvyn"
-          />
+         F
         </div>
         <span className="logo-text">Fintech</span>
 
